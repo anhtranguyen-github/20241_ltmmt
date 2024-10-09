@@ -100,7 +100,7 @@ void handle_client_message(int i) {
         handle_client_disconnection(i);
     } else {
         buffer[valread] = '\0';
-        printf("%s", buffer);
+        printf("%s: %s", client_usernames[i], buffer);
         broadcast_message(clients[i], buffer);
     }
 }
@@ -123,19 +123,11 @@ void handle_username(int i) {
     }
 }
 
+// Server setup
 void setup_server() {
-    int opt = 1;
-
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket");
-        exit(EXIT_FAILURE);
-    }
-
-    // Set the socket option to reuse the address (SO_REUSEADDR)
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-        perror("setsockopt");
-        close(sockfd);
         exit(EXIT_FAILURE);
     }
 
@@ -171,7 +163,6 @@ void close_all_clients() {
 void select_server() {
     fd_set read_fds;
     int max_fd, activity;
-    struct timeval timeout;
 
     while (!stop_server) {
         FD_ZERO(&read_fds);
@@ -183,11 +174,7 @@ void select_server() {
             if (clients[i] > max_fd) max_fd = clients[i];
         }
 
-        // Set timeout of 5 seconds
-        timeout.tv_sec = 5;
-        timeout.tv_usec = 0;
-
-        activity = select(max_fd + 1, &read_fds, NULL, NULL, &timeout);
+        activity = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
 
         if ((activity < 0) && (errno != EINTR)) {
             perror("select");
@@ -270,7 +257,7 @@ void poll_server() {
             }
         }
 
-        int poll_result = poll(poll_fds, nfds, 5000); // 5-second timeout
+        int poll_result = poll(poll_fds, nfds, -1);
 
         if (poll_result < 0 && errno != EINTR) {
             perror("poll");
@@ -294,6 +281,7 @@ void poll_server() {
     close_all_clients();
 }
 
+// Main function
 int main(int argc, char *argv[]) {
     initialize_clients();
     setup_server();

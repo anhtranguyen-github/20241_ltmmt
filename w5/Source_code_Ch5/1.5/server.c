@@ -100,7 +100,7 @@ void handle_client_message(int i) {
         handle_client_disconnection(i);
     } else {
         buffer[valread] = '\0';
-        printf("%s", buffer);
+        printf("%s: %s", client_usernames[i], buffer);
         broadcast_message(clients[i], buffer);
     }
 }
@@ -123,19 +123,11 @@ void handle_username(int i) {
     }
 }
 
+// Server setup
 void setup_server() {
-    int opt = 1;
-
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         perror("socket");
-        exit(EXIT_FAILURE);
-    }
-
-    // Set the socket option to reuse the address (SO_REUSEADDR)
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-        perror("setsockopt");
-        close(sockfd);
         exit(EXIT_FAILURE);
     }
 
